@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💳 Credit Card Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap');
+:root{--bg:#0d0f14;--surface:#161a24;--surface2:#1e2436;--border:#2a3048;--accent:#4f8ef7;--accent2:#7c5df0;--green:#22d3a0;--amber:#f5a623;--coral:#f56342;--text:#e8eaf2;--text2:#8b91ad;--text3:#5a6080;--mono:'DM Mono',monospace;--sans:'Sora',sans-serif;--radius:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#4f8ef7,#7c5df0);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.header-right{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text3);font-family:var(--mono)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.app{max-width:1280px;margin:0 auto;padding:24px 28px}
+.upload-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px}
+.upload-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.upload-sub{font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:16px;line-height:1.6}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+@media(max-width:700px){.upload-grid{grid-template-columns:1fr}}
+.field-label{font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
+.pw-wrap{display:flex;gap:0}
+.pw-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px 0 0 8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:9px 12px;outline:none}
+.pw-input:focus{border-color:var(--accent)}
+.pw-toggle{background:var(--surface2);border:1px solid var(--border);border-left:none;border-radius:0 8px 8px 0;color:var(--text3);padding:0 12px;cursor:pointer;font-size:13px}
+.pw-toggle:hover{color:var(--text)}
+.drop-zone{border:1.5px dashed var(--border);border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);position:relative}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:rgba(79,142,247,.07)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:28px;margin-bottom:8px}
+.drop-text{font-size:12px;color:var(--text3);font-family:var(--mono)}
+.drop-text strong{color:var(--accent)}
+.action-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{padding:9px 18px;border-radius:8px;border:none;font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn:hover{opacity:.88}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.btn-danger{background:rgba(245,99,66,.15);color:var(--coral);border:1px solid rgba(245,99,66,.3)}
+.file-list{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.file-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:8px;padding:8px 12px;font-size:12px;font-family:var(--mono)}
+.file-item-name{flex:1;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item-size{color:var(--text3);white-space:nowrap}
+.file-item-status{font-size:11px;white-space:nowrap;padding:2px 8px;border-radius:999px}
+.st-pending{background:rgba(245,166,35,.12);color:var(--amber)}
+.st-ok{background:rgba(34,211,160,.12);color:var(--green)}
+.st-err{background:rgba(245,99,66,.12);color:var(--coral)}
+.st-proc{background:rgba(79,142,247,.12);color:var(--accent)}
+.progress-bar{height:3px;background:var(--surface2);border-radius:999px;margin-top:12px;overflow:hidden;display:none}
+.progress-fill{height:100%;background:var(--accent);border-radius:999px;transition:width .4s;width:0%}
+.log-box{margin-top:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--text3);max-height:160px;overflow-y:auto;display:none;line-height:1.8}
+.slicer-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:22px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.slicer-title{font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin-right:6px;display:flex;align-items:center;gap:6px}
+.slicer-group{display:flex;align-items:center;gap:5px}
+.slicer-group-label{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.6px}
+.slicer-select{background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 10px;cursor:pointer;outline:none;min-width:140px;transition:border-color .15s}
+.slicer-select:focus,.slicer-select:hover{border-color:var(--accent)}
+.slicer-clear{margin-left:auto;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--text3);font-family:var(--mono);font-size:11px;padding:6px 12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.slicer-clear:hover{border-color:var(--coral);color:var(--coral)}
+.slicer-clear.has-filters{border-color:var(--accent);color:var(--accent)}
+.active-filter-count{background:var(--accent);color:#fff;border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;display:none}
+.active-filter-count.show{display:inline-block}
+.period-bar{display:flex;align-items:center;gap:8px;margin-bottom:22px;flex-wrap:wrap}
+.period-label{font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin-right:2px}
+.pill{padding:5px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;font-size:12px;font-family:var(--mono);transition:all .15s}
+.pill:hover{border-color:var(--accent);color:var(--accent)}
+.pill.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:22px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc-blue::before{background:var(--accent)}.sc-purple::before{background:var(--accent2)}.sc-green::before{background:var(--green)}.sc-amber::before{background:var(--amber)}
+.stat-label{font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+.stat-value{font-size:24px;font-weight:700;font-family:var(--mono);letter-spacing:-1px}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:3px;font-family:var(--mono)}
+.sc-blue .stat-value{color:var(--accent)}.sc-purple .stat-value{color:var(--accent2)}.sc-green .stat-value{color:var(--green)}.sc-amber .stat-value{color:var(--amber)}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
+@media(max-width:800px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.chart-title{font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px}
+.chart-wrap{position:relative;height:210px}
+.legend-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px;font-family:var(--mono);color:var(--text2)}
+.legend-row span{display:flex;align-items:center;gap:4px}
+.lsq{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.bar-rows{display:flex;flex-direction:column;gap:10px}
+.bar-row{display:flex;flex-direction:column;gap:4px}
+.bar-info{display:flex;justify-content:space-between;font-size:12px;font-family:var(--mono);color:var(--text2)}
+.bar-track{height:6px;background:var(--surface2);border-radius:999px;overflow:hidden}
+.bar-fill{height:100%;border-radius:999px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.table-title{font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.7px}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap}
+.filter-select{background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 9px;cursor:pointer;outline:none}
+.filter-select:focus{border-color:var(--accent)}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--surface2)}
+th{padding:9px 14px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.7px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:400}
+td{padding:10px 14px;font-size:12px;border-bottom:1px solid rgba(42,48,72,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(79,142,247,.04)}
+.td-amt{font-family:var(--mono);text-align:right;white-space:nowrap}
+.td-date{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-family:var(--mono);font-weight:500;white-space:nowrap}
+.bg-pu{background:rgba(79,142,247,.15);color:var(--accent)}
+.bg-in{background:rgba(124,93,240,.15);color:var(--accent2)}
+.bg-re{background:rgba(245,99,66,.15);color:var(--coral)}
+.bg-7173{background:rgba(79,142,247,.12);color:var(--accent)}
+.bg-4892{background:rgba(34,211,160,.12);color:var(--green)}
+.cdot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.tfoot-info{padding:9px 14px;font-size:11px;color:var(--text3);font-family:var(--mono);border-top:1px solid var(--border);display:flex;justify-content:space-between}
+.empty-state{text-align:center;padding:48px;color:var(--text3);font-family:var(--mono);font-size:12px}
+.empty-icon{font-size:32px;margin-bottom:10px;opacity:.4}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon">💳</div>Credit Card Dashboard</div>
+  <div class="header-right"><div class="dot"></div><span id="sync-label">No data loaded</span></div>
+</header>
+<div class="app">
+  <div class="upload-panel">
+    <div class="upload-title">📂 Load statements from your computer</div>
+    <div class="upload-sub">Drop PDF statements (password-protected is fine — enter password below).<br>Everything is processed in your browser. Nothing leaves your computer.</div>
+    <div class="upload-grid">
+      <div>
+        <div class="field-label">PDF Password (รหัสผ่าน)</div>
+        <div class="pw-wrap">
+          <input class="pw-input" type="password" id="pdf-password" placeholder="e.g. 16Sep2001" autocomplete="off">
+          <button class="pw-toggle" onclick="togglePw()" title="Show/hide password">👁</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:5px">Same password applies to all files in batch</div>
+        <div class="field-label" style="margin-top:14px">Pay Period Override (optional)</div>
+        <input class="pw-input" type="text" id="period-override" placeholder="auto-detect (or e.g. Feb 15 – Mar 15 2026)" autocomplete="off" style="border-radius:8px;width:100%">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:5px">Leave blank to auto-detect from statement closing date</div>
+      </div>
+      <div>
+        <div class="field-label">Statement PDFs</div>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="file-input" accept=".pdf" multiple onchange="onFilePick(event)">
+          <div class="drop-icon">📄</div>
+          <div class="drop-text"><strong>Click to browse</strong> or drag &amp; drop PDF files</div>
+        </div>
+      </div>
+    </div>
+    <div class="file-list" id="file-list"></div>
+    <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="action-row" style="margin-top:14px">
+      <button class="btn btn-primary" onclick="processAll()">⚡ Extract transactions</button>
+      <button class="btn btn-secondary" onclick="clearFiles()">✕ Clear files</button>
+      <button class="btn btn-danger" onclick="clearData()">🗑 Clear all data</button>
+      <span id="proc-status" style="font-size:12px;font-family:var(--mono);color:var(--text3)"></span>
+    </div>
+    <div class="log-box" id="log-box"></div>
+  </div>
+
+  <div class="slicer-panel">
+    <div class="slicer-title">🎯 Filters <span class="active-filter-count" id="filter-count">0</span></div>
+    <div class="slicer-group">
+      <span class="slicer-group-label">Period</span>
+      <select class="slicer-select" id="period-dropdown" onchange="onPeriodChange()">
+        <option value="all">All periods</option>
+      </select>
+    </div>
+    <div class="slicer-group">
+      <span class="slicer-group-label">Card</span>
+      <select class="slicer-select" id="f-card" onchange="renderAll();updateFilterCount()">
+        <option value="">All cards</option>
+        <option value="7173">…7173 Central The 1</option>
+        <option value="4892">…4892 HomePro Visa</option>
+      </select>
+    </div>
+    <div class="slicer-group">
+      <span class="slicer-group-label">Type</span>
+      <select class="slicer-select" id="f-type" onchange="renderAll();updateFilterCount()">
+        <option value="">All types</option>
+        <option value="Purchase">Purchase</option>
+        <option value="Installment">Installment</option>
+        <option value="Reversal">Reversal</option>
+      </select>
+    </div>
+    <div class="slicer-group">
+      <span class="slicer-group-label">Category</span>
+      <select class="slicer-select" id="f-cat" onchange="renderAll();updateFilterCount()">
+        <option value="">All categories</option>
+      </select>
+    </div>
+    <div class="slicer-group" style="flex:1;min-width:180px">
+      <span class="slicer-group-label">Search</span>
+      <div style="position:relative;flex:1">
+        <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:11px;pointer-events:none">🔍</span>
+        <input class="slicer-select" type="text" id="f-search" placeholder="merchant name…" oninput="onSearchInput()" autocomplete="off" style="padding-left:26px;width:100%">
+        <button id="search-clear-btn" onclick="clearSearch()" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px" title="Clear search">✕</button>
+      </div>
+    </div>
+    <button class="slicer-clear" id="clear-filters-btn" onclick="clearFilters()">✕ Clear filters</button>
+  </div>
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card sc-blue"><div class="empty-state"><div class="empty-icon">📊</div>Load statements above to see your dashboard</div></div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card"><div class="chart-title">Spend by category</div><div class="legend-row" id="cat-legend"></div><div class="chart-wrap"><canvas id="cat-chart"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Purchase vs installment</div><div class="legend-row" id="type-legend"></div><div class="chart-wrap"><canvas id="type-chart"></canvas></div></div>
+  </div>
+  <div class="chart-card" style="margin-bottom:22px"><div class="chart-title">Spend by card</div><div class="bar-rows" id="card-bars"></div></div>
+  <div class="chart-card" style="margin-bottom:22px">
+    <div class="chart-title">Bill amount by period (Purchase vs Installment)</div>
+    <div class="legend-row" id="period-legend"></div>
+    <div class="chart-wrap" style="height:260px"><canvas id="period-chart"></canvas></div>
+  </div>
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">Transactions</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">Use filters above to slice ↑</div>
+    </div>
+    <div id="table-wrap"><div class="empty-state"><div class="empty-icon">📋</div>No transactions yet</div></div>
+  </div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let allData = JSON.parse(localStorage.getItem('cc_data') || '[]');
+let pendingFiles = [];
+let selPeriod = 'all';
+let catChart, typeChart, periodChart;
+
+const CAT_COLORS = {
+  'Food & Dining':'#f5a623','Groceries':'#22d3a0','Shopping':'#4f8ef7',
+  'Health & Fitness':'#e84393','Insurance':'#7c5df0','Subscriptions':'#06b6d4',
+  'Travel':'#f56342','Fuel & Transport':'#a78bfa','Electronics':'#34d399',
+  'Home & Garden':'#6ee7b7','Sports & Recreation':'#fbbf24','Other':'#6b7280'
+};
+
+const CATS = [
+  {p:/jetts|fitness|gym|golf/i,                                       c:'Health & Fitness'},
+  {p:/shopeefood|grab|restaurant|cafe|coffee|7-?eleven|phon mee/i,    c:'Food & Dining'},
+  {p:/tops|makro|villa|lotus|grocery|supermarket/i,                   c:'Groceries'},
+  {p:/shopee|lazada|central|department|yingcharoen/i,                 c:'Shopping'},
+  {p:/agoda|booking\.com|hotel|resort|airbnb/i,                       c:'Travel'},
+  {p:/bolt|taxi|uber|bts|mrt|bangchak|ptt|shell|caltex|bsrc/i,        c:'Fuel & Transport'},
+  {p:/insurance|roojai|axa|aig|allianz/i,                             c:'Insurance'},
+  {p:/apple|samsung|sony/i,                                           c:'Electronics'},
+  {p:/homepro|home product|homemart/i,                                c:'Home & Garden'},
+  {p:/netflix|spotify|claude|openai|google|microsoft|adobe/i,         c:'Subscriptions'},
+];
+function guessCategory(m) {
+  for (const r of CATS) if (r.p.test(m)) return r.c;
+  return 'Other';
+}
+
+function fmt(n) { return '฿' + Math.round(n).toLocaleString('th-TH'); }
+function sum(a) { return a.reduce((s,v)=>s+v, 0); }
+
+function log(msg, type='info') {
+  const box = document.getElementById('log-box');
+  box.style.display = 'block';
+  const colors = {info:'var(--text3)', ok:'var(--green)', err:'var(--coral)', warn:'var(--amber)'};
+  box.innerHTML += `<div style="color:${colors[type]||colors.info}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+function togglePw() {
+  const i = document.getElementById('pdf-password');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+
+function saveData() { localStorage.setItem('cc_data', JSON.stringify(allData)); }
+
+function onFilePick(e) {
+  const files = Array.from(e.target.files);
+  files.forEach(f => { if (!pendingFiles.find(p => p.name === f.name)) pendingFiles.push(f); });
+  renderFileList();
+}
+
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+  files.forEach(f => { if (!pendingFiles.find(p => p.name === f.name)) pendingFiles.push(f); });
+  renderFileList();
+});
+
+function renderFileList() {
+  const c = document.getElementById('file-list');
+  c.innerHTML = pendingFiles.map((f, i) =>
+    `<div class="file-item" id="fi-${i}">
+      <span style="font-size:16px">📄</span>
+      <span class="file-item-name">${f.name}</span>
+      <span class="file-item-size">${(f.size/1024).toFixed(0)} KB</span>
+      <span class="file-item-status st-pending" id="fs-${i}">Pending</span>
+    </div>`
+  ).join('');
+}
+
+function setFileStatus(i, label, cls) {
+  const el = document.getElementById('fs-'+i);
+  if (!el) return;
+  el.textContent = label;
+  el.className = 'file-item-status ' + cls;
+}
+
+function clearFiles() {
+  pendingFiles = [];
+  document.getElementById('file-list').innerHTML = '';
+  document.getElementById('file-input').value = '';
+  document.getElementById('log-box').style.display = 'none';
+  document.getElementById('log-box').innerHTML = '';
+  document.getElementById('progress-bar').style.display = 'none';
+  document.getElementById('proc-status').textContent = '';
+}
+
+function clearData() {
+  if (!confirm('Clear all loaded transaction data?')) return;
+  allData = [];
+  saveData();
+  selPeriod = 'all';
+  buildPills();
+  renderAll();
+  document.getElementById('sync-label').textContent = 'No data loaded';
+  log('All data cleared.', 'warn');
+}
+
+async function processAll() {
+  if (!pendingFiles.length) { alert('Please select PDF files first.'); return; }
+  const pw = document.getElementById('pdf-password').value;
+  const bar = document.getElementById('progress-bar');
+  const fill = document.getElementById('progress-fill');
+  bar.style.display = 'block';
+  fill.style.width = '0%';
+  document.getElementById('proc-status').textContent = 'Processing…';
+  log('Starting extraction for ' + pendingFiles.length + ' file(s)…');
+
+  let added = 0, errors = 0;
+  for (let i = 0; i < pendingFiles.length; i++) {
+    setFileStatus(i, 'Reading…', 'st-proc');
+    fill.style.width = Math.round((i / pendingFiles.length) * 100) + '%';
+    try {
+      const rows = await extractFromPdf(pendingFiles[i], pw);
+      const keys = new Set(allData.map(r => r.pay_period+'|'+r.transaction_date+'|'+r.merchant+'|'+r.amount));
+      const newRows = rows.filter(r => !keys.has(r.pay_period+'|'+r.transaction_date+'|'+r.merchant+'|'+r.amount));
+      allData.push(...newRows);
+      added += newRows.length;
+      setFileStatus(i, '+' + newRows.length + ' rows', 'st-ok');
+      log(pendingFiles[i].name + ' → ' + rows.length + ' parsed, ' + newRows.length + ' new (' + (rows.length-newRows.length) + ' dupes)', 'ok');
+    } catch (e) {
+      errors++;
+      setFileStatus(i, 'Error', 'st-err');
+      log(pendingFiles[i].name + ': ' + e.message, 'err');
+    }
+  }
+  fill.style.width = '100%';
+  saveData();
+  buildPills();
+  renderAll();
+  updateFilterCount();
+  document.getElementById('sync-label').textContent = 'Loaded ' + allData.length + ' transactions';
+  document.getElementById('proc-status').textContent = '✓ Done — ' + added + ' rows added' + (errors ? ', ' + errors + ' errors' : '');
+}
+
+// ─────────────────────────────────────────────────────────
+// PDF text extraction (line-based, preserving line breaks)
+// ─────────────────────────────────────────────────────────
+async function extractFromPdf(file, password) {
+  const ab = await file.arrayBuffer();
+  const opts = { data: ab };
+  if (password) opts.password = password;
+
+  let pdf;
+  try {
+    pdf = await pdfjsLib.getDocument(opts).promise;
+  } catch (e) {
+    if (e.name === 'PasswordException') {
+      throw new Error('Wrong PDF password. Check the password field.');
+    }
+    throw e;
+  }
+
+  // Build lines per page using Y-coordinate clustering
+  const allLines = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    // Group items by Y (rounded). Items at same Y form one line.
+    const byY = {};
+    for (const item of content.items) {
+      const y = Math.round(item.transform[5]);
+      if (!byY[y]) byY[y] = [];
+      byY[y].push({ x: item.transform[4], str: item.str });
+    }
+    // Sort lines by Y descending (top of page first)
+    const yKeys = Object.keys(byY).map(Number).sort((a,b) => b-a);
+    for (const y of yKeys) {
+      // Sort items in line by X ascending
+      const items = byY[y].sort((a,b) => a.x - b.x);
+      const line = items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
+      if (line) allLines.push(line);
+    }
+    allLines.push('---PAGEBREAK---');
+  }
+
+  return parseLines(allLines, file.name);
+}
+
+// ─────────────────────────────────────────────────────────
+// Line-based parser
+// ─────────────────────────────────────────────────────────
+function parseLines(lines, filename) {
+  const rows = [];
+
+  // Detect card number
+  const joined = lines.join(' ');
+  let card = '????';
+  if (/7173/.test(joined) || /7173/.test(filename)) card = '7173';
+  else if (/4892/.test(joined) || /4892/.test(filename)) card = '4892';
+  const cardName = card === '7173' ? 'Central The 1' : card === '4892' ? 'HomePro Visa Platinum' : 'Unknown';
+
+  // Detect pay period using 5-strategy fallback chain.
+  // The closing date can appear in different places depending on how PDF.js
+  // groups text fragments by Y-coordinate.
+  const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let closingDate = null;
+  let periodStrategy = 'none';
+
+  // Manual override always wins
+  const override = (document.getElementById('period-override')?.value || '').trim();
+  if (override) {
+    closingDate = 'OVERRIDE';
+    periodStrategy = 'manual';
+  }
+
+  const headerLines = lines.filter(l => l !== '---PAGEBREAK---').slice(0, 35);
+
+  // Strategy 1: Standalone DD/MM/YY on its own line
+  if (!closingDate) {
+    for (let i = 0; i < headerLines.length; i++) {
+      const m = headerLines[i].trim().match(/^(\d{2})\/(\d{2})\/(\d{2})$/);
+      if (m) {
+        const d = parseInt(m[1]), mo = parseInt(m[2]);
+        if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+          closingDate = [m[1], m[2], m[3]];
+          periodStrategy = `standalone@L${i+1}`;
+          break;
+        }
+      }
+    }
+  }
+
+  // Strategy 2: Date right after the masked card number
+  if (!closingDate) {
+    for (let i = 0; i < headerLines.length; i++) {
+      const m = headerLines[i].match(/\d{4}\s+\d{2}XX\s+XXXX\s+\d{4}\s+(\d{2})\/(\d{2})\/(\d{2})/);
+      if (m) {
+        const mo = parseInt(m[2]);
+        if (mo >= 1 && mo <= 12) {
+          closingDate = [m[1], m[2], m[3]];
+          periodStrategy = `after_card@L${i+1}`;
+          break;
+        }
+      }
+    }
+  }
+
+  // Strategy 3: After Thai or English label
+  if (!closingDate) {
+    const labelRe = /(?:Statement Closing Date|วันที่สรุปยอด|Closing Date)[^\d]*?(\d{2})\/(\d{2})\/(\d{2})/i;
+    for (let i = 0; i < Math.min(50, lines.length); i++) {
+      const m = lines[i].match(labelRe);
+      if (m) {
+        closingDate = [m[1], m[2], m[3]];
+        periodStrategy = `after_label@L${i+1}`;
+        break;
+      }
+    }
+  }
+
+  // Strategy 4: From the document ID like "_KCC_15032026_" or "_CMR_15052026_"
+  if (!closingDate) {
+    for (const line of headerLines) {
+      const m = line.match(/_(\d{2})(\d{2})(\d{4})_\d{6}/);
+      if (m) {
+        const mo = parseInt(m[2]);
+        if (mo >= 1 && mo <= 12) {
+          closingDate = [m[1], m[2], m[3].slice(-2)];
+          periodStrategy = 'doc_id';
+          break;
+        }
+      }
+    }
+  }
+
+  // Strategy 5: From filename pattern like "15032026"
+  if (!closingDate) {
+    const m = filename.match(/_?(\d{2})(\d{2})(20\d{2})_?/);
+    if (m) {
+      const mo = parseInt(m[2]);
+      if (mo >= 1 && mo <= 12) {
+        closingDate = [m[1], m[2], m[3].slice(-2)];
+        periodStrategy = 'filename';
+      }
+    }
+  }
+
+  let payPeriod;
+  if (closingDate === 'OVERRIDE') {
+    payPeriod = override;
+  } else if (closingDate) {
+    const d = parseInt(closingDate[0]), mo = parseInt(closingDate[1]), yr = parseInt(closingDate[2]);
+    const prevMo = mo === 1 ? 12 : mo - 1;
+    const prevYr = mo === 1 ? yr - 1 : yr;
+    payPeriod = `${months[prevMo]} ${String(d).padStart(2,'0')} 20${String(prevYr).padStart(2,'0')} – ${months[mo]} ${String(d).padStart(2,'0')} 20${String(yr).padStart(2,'0')}`;
+  } else {
+    payPeriod = 'Unknown Period';
+  }
+
+  // Patterns
+  const purchaseLine = /^(\d{2}\/\d{2}\/\d{2})\s+(\d{2}\/\d{2}\/\d{2})\s+(.+?)\s+(-?[\d,]+\.\d{2})$/;
+  const installHeader = /^(\d{2}\/\d{2}\/\d{2})\s+(\d{2}\/\d{2}\/\d{2})\s+(.+?)$/;
+  const installFinal = /^([\d,]+\.\d{2})\s+(\d{3})\/(\d{3})\s+([\d,]+\.\d{2})$/;
+
+  // Skip lines containing these
+  const skipPatterns = [
+    /ขอบคุณ/, /thank/i, /subtotal/i, /total payment/i, /transaction amount/i,
+    /ยอดรวม/, /ยอดเรียก/, /installment amount/i,
+    /ค่[ำา]งวดต่อเดือน/,
+    /^---PAGEBREAK---$/,
+    /credit line/i, /outstanding/i, /available credit/i, /cash back/i,
+    /payment due/i, /closing date/i, /minimum payment/i
+  ];
+
+  let pendingInstall = null;
+  let stats = { skipped: 0, purchases: 0, installments: 0 };
+
+  // Single-line installment: "DD/MM/YY DD/MM/YY MERCHANT  LOAN  CUR/TOT  MONTHLY"
+  // — covers cases where PDF.js flattens the whole row onto one line.
+  const installSingleLine = /^(\d{2}\/\d{2}\/\d{2})\s+(\d{2}\/\d{2}\/\d{2})\s+(.+?)\s+([\d,]+\.\d{2})\s+(\d{3})\/(\d{3})\s+([\d,]+\.\d{2})$/;
+
+  // Any line that contains an installment serial (NNN/NNN) is treated as installment context
+  const installSerial = /\b\d{3}\/\d{3}\b/;
+
+  for (const line of lines) {
+    if (skipPatterns.some(rx => rx.test(line))) { stats.skipped++; continue; }
+
+    // ── PRIORITY 1: Single-line installment (date date merchant loan cur/tot monthly) ──
+    let m = line.match(installSingleLine);
+    if (m) {
+      const [, tx, post, merchant, , cur, tot, monthly] = m;
+      const amount = parseFloat(monthly.replace(/,/g, ''));
+      if (amount > 0 && amount <= 200000) {
+        let mc = merchant.replace(/\bCPP ON CALL\b/gi, '').replace(/\bALL_+\b/g, '').replace(/\bREGULAR ANY BRAND ANY MODEL\b/gi, '').replace(/\s+/g, ' ').trim();
+        mc = cleanMerchant(mc);
+        rows.push({
+          pay_period: payPeriod, card, card_name: cardName,
+          transaction_date: tx, posting_date: post,
+          merchant: `(${cur}/${tot} Installment)_${mc}`,
+          amount, type: 'Installment',
+          category: guessCategory(mc)
+        });
+        stats.installments++;
+        pendingInstall = null;
+      }
+      continue;
+    }
+
+    // ── PRIORITY 2: Multi-line installment final "LOAN CUR/TOT MONTHLY" ──
+    m = line.match(installFinal);
+    if (m && pendingInstall) {
+      const [, , cur, tot, monthly] = m;
+      const amount = parseFloat(monthly.replace(/,/g, ''));
+      if (amount > 0 && amount <= 200000) {
+        let merchantText = pendingInstall.merchant_lines.join(' ');
+        merchantText = merchantText.replace(/\bCPP ON CALL\b/gi, '');
+        merchantText = merchantText.replace(/\bALL_+\b/g, '');
+        merchantText = merchantText.replace(/\bREGULAR ANY BRAND ANY MODEL\b/gi, '');
+        merchantText = merchantText.replace(/\s+/g, ' ').trim();
+        merchantText = cleanMerchant(merchantText);
+
+        const label = `(${cur}/${tot} Installment)_${merchantText}`;
+        rows.push({
+          pay_period: payPeriod, card, card_name: cardName,
+          transaction_date: pendingInstall.tx_date,
+          posting_date: pendingInstall.post_date,
+          merchant: label, amount, type: 'Installment',
+          category: guessCategory(merchantText)
+        });
+        stats.installments++;
+      }
+      pendingInstall = null;
+      continue;
+    }
+
+    // ── PRIORITY 3: Purchase line (date date merchant amount) ──
+    // BUT only if it doesn't contain an installment serial like NNN/NNN
+    m = line.match(purchaseLine);
+    if (m && !installSerial.test(line)) {
+      const [, tx, post, merchant, amtStr] = m;
+      const amount = parseFloat(amtStr.replace(/,/g, ''));
+      // Allow negative amounts (e.g. "REV TO CPP:..." reversals that offset
+      // the original purchase when it gets converted to an installment plan).
+      // Range: -500,000 to 500,000, but exclude exactly zero.
+      if (amount === 0 || amount < -500000 || amount > 500000) continue;
+      pendingInstall = null;
+
+      // Detect "REV TO CPP:" reversals and clean the merchant name
+      let cleanedMerchant = merchant;
+      let txType = 'Purchase';
+      const revMatch = merchant.match(/^REV TO CPP:\s*(.+)$/i);
+      if (revMatch) {
+        cleanedMerchant = '(Reversal → Installment)_' + revMatch[1].trim();
+        txType = 'Reversal';
+      } else {
+        cleanedMerchant = cleanMerchant(merchant);
+      }
+
+      rows.push({
+        pay_period: payPeriod, card, card_name: cardName,
+        transaction_date: tx, posting_date: post,
+        merchant: cleanedMerchant,
+        amount, type: txType,
+        category: txType === 'Reversal' ? guessCategory(revMatch[1]) : guessCategory(merchant)
+      });
+      if (txType === 'Reversal') {
+        stats.reversals = (stats.reversals || 0) + 1;
+      } else {
+        stats.purchases++;
+      }
+      continue;
+    }
+
+    // ── PRIORITY 4: Installment header (date date text — no amount) ──
+    m = line.match(installHeader);
+    if (m) {
+      const [, tx, post, rest] = m;
+      pendingInstall = { tx_date: tx, post_date: post, merchant_lines: [rest] };
+      continue;
+    }
+
+    // ── PRIORITY 5: Continuation of multi-line installment merchant name ──
+    if (pendingInstall) {
+      pendingInstall.merchant_lines.push(line);
+    }
+  }
+
+  // ── Safety net: any row whose merchant contains NNN/NNN must be Installment
+  //    (skip Reversal rows — those are legitimate negative purchases) ──
+  for (const row of rows) {
+    if (installSerial.test(row.merchant) && row.type !== 'Installment' && row.type !== 'Reversal') {
+      row.type = 'Installment';
+      stats.purchases--;
+      stats.installments++;
+    }
+  }
+
+  const revCount = stats.reversals || 0;
+  log(`Parsed: ${stats.purchases} purchases + ${stats.installments} installments + ${revCount} reversals = ${rows.length} total (skipped ${stats.skipped} header/total lines)`, 'info');
+  log(`Card: ${card} (${cardName})  |  Period strategy: ${periodStrategy}  |  Pay period: ${payPeriod}`, payPeriod === 'Unknown Period' ? 'warn' : 'info');
+  return rows;
+}
+
+function cleanMerchant(m) {
+  return m
+    .replace(/\s+/g, ' ')
+    .replace(/\b(BANGKOK|NONTHABURI|BANGK|BAN|NAK|PAK|SAR|CHA|INTER|INT|THA|TH)\s+(?:THA|TH)\b/gi, '$1')
+    .replace(/\s+(?:THA|TH)$/i, '')
+    .trim();
+}
+
+// ─────────────────────────────────────────────────────────
+// Dashboard rendering
+// ─────────────────────────────────────────────────────────
+
+// Convert "Feb 15 2026 – Mar 15 2026" or "Feb 15 – Mar 15 2026" to a sortable number.
+// Uses the END date so newest periods sort first.
+function periodToSortKey(p) {
+  if (!p || p === 'Unknown Period') return 0;
+  const months = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+  // Match the second (end) date: "MMM DD YYYY"
+  const m = p.match(/–\s*([A-Z][a-z]{2})\s+(\d{1,2})\s+(\d{4})/);
+  if (m) {
+    return months[m[1]] * 100 + parseInt(m[2]) + parseInt(m[3]) * 10000;
+  }
+  // Fallback: "MMM DD – MMM DD YYYY" — single year at end
+  const m2 = p.match(/–\s*([A-Z][a-z]{2})\s+(\d{1,2})\s+(\d{4})$/);
+  if (m2) return months[m2[1]] * 100 + parseInt(m2[2]) + parseInt(m2[3]) * 10000;
+  return 0;
+}
+
+function buildPills() {
+  // Chronological sort: newest period first
+  const periods = [...new Set(allData.map(r => r.pay_period))]
+    .sort((a, b) => periodToSortKey(b) - periodToSortKey(a));
+
+  const dropdown = document.getElementById('period-dropdown');
+  if (!dropdown) return;
+
+  // Preserve current selection if it still exists; otherwise default to 'all'
+  if (selPeriod !== 'all' && !periods.includes(selPeriod)) {
+    selPeriod = 'all';
+  }
+
+  dropdown.innerHTML = '<option value="all">All periods</option>' +
+    periods.map(p => `<option value="${p}"${p === selPeriod ? ' selected' : ''}>${p}</option>`).join('');
+
+  dropdown.value = selPeriod;
+}
+
+function onPeriodChange() {
+  selPeriod = document.getElementById('period-dropdown').value;
+  renderAll();
+  updateFilterCount();
+}
+
+function clearFilters() {
+  selPeriod = 'all';
+  document.getElementById('period-dropdown').value = 'all';
+  document.getElementById('f-card').value = '';
+  document.getElementById('f-type').value = '';
+  document.getElementById('f-cat').value = '';
+  document.getElementById('f-search').value = '';
+  document.getElementById('search-clear-btn').style.display = 'none';
+  renderAll();
+  updateFilterCount();
+}
+
+function clearSearch() {
+  document.getElementById('f-search').value = '';
+  document.getElementById('search-clear-btn').style.display = 'none';
+  renderAll();
+  updateFilterCount();
+}
+
+// Debounced search input handler — waits 200ms after typing stops before re-rendering
+let searchTimer = null;
+function onSearchInput() {
+  const val = document.getElementById('f-search').value;
+  document.getElementById('search-clear-btn').style.display = val ? 'block' : 'none';
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    renderAll();
+    updateFilterCount();
+  }, 200);
+}
+
+function updateFilterCount() {
+  let count = 0;
+  if (selPeriod !== 'all') count++;
+  if (document.getElementById('f-card').value) count++;
+  if (document.getElementById('f-type').value) count++;
+  if (document.getElementById('f-cat').value) count++;
+  if ((document.getElementById('f-search')?.value || '').trim()) count++;
+  const badge = document.getElementById('filter-count');
+  const btn = document.getElementById('clear-filters-btn');
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.add('show');
+    btn.classList.add('has-filters');
+  } else {
+    badge.classList.remove('show');
+    btn.classList.remove('has-filters');
+  }
+}
+
+function getFiltered() {
+  let d = allData.slice();
+  if (selPeriod !== 'all') d = d.filter(r => r.pay_period === selPeriod);
+  const fc = document.getElementById('f-card').value;
+  const ft = document.getElementById('f-type').value;
+  const fcat = document.getElementById('f-cat').value;
+  const fs = (document.getElementById('f-search')?.value || '').trim().toLowerCase();
+  if (fc) d = d.filter(r => r.card === fc);
+  if (ft) d = d.filter(r => r.type === ft);
+  if (fcat) d = d.filter(r => r.category === fcat);
+  if (fs) d = d.filter(r => r.merchant.toLowerCase().includes(fs));
+  return d;
+}
+
+function renderAll() {
+  const d = getFiltered();
+  renderStats(d);
+  renderCatChart(d);
+  renderTypeChart(d);
+  renderCardBars(d);
+  renderPeriodChart();
+  renderTable(d);
+}
+
+function renderStats(d) {
+  const total = sum(d.map(r => r.amount));
+  // Group reversals with purchases — reversals are negative purchases that
+  // offset the original transaction when it was converted to an installment.
+  const pu = d.filter(r => r.type === 'Purchase' || r.type === 'Reversal');
+  const ins = d.filter(r => r.type === 'Installment');
+  const tP = sum(pu.map(r => r.amount));
+  const tI = sum(ins.map(r => r.amount));
+  const revCount = d.filter(r => r.type === 'Reversal').length;
+  const puSubLabel = revCount > 0
+    ? `${pu.length - revCount} purchases − ${revCount} reversals`
+    : `${pu.length} items`;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card sc-blue"><div class="stat-label">Total spend</div><div class="stat-value">${fmt(total)}</div><div class="stat-sub">${d.length} transactions</div></div>
+    <div class="stat-card sc-green"><div class="stat-label">Purchases (net)</div><div class="stat-value">${fmt(tP)}</div><div class="stat-sub">${puSubLabel}</div></div>
+    <div class="stat-card sc-purple"><div class="stat-label">Installments</div><div class="stat-value">${fmt(tI)}</div><div class="stat-sub">${ins.length} items / month</div></div>
+    <div class="stat-card sc-amber"><div class="stat-label">Avg per tx</div><div class="stat-value">${d.length ? fmt(total/d.length) : '฿0'}</div><div class="stat-sub">${selPeriod === 'all' ? 'all periods' : ''}</div></div>
+  `;
+}
+
+function renderCatChart(d) {
+  // Category chart should ignore the category filter — otherwise it'd show
+  // only one slice. Apply other filters though.
+  const fc = document.getElementById('f-card').value;
+  const ft = document.getElementById('f-type').value;
+  const fs = (document.getElementById('f-search')?.value || '').trim().toLowerCase();
+  let pool = allData.slice();
+  if (selPeriod !== 'all') pool = pool.filter(r => r.pay_period === selPeriod);
+  if (fc) pool = pool.filter(r => r.card === fc);
+  if (ft) pool = pool.filter(r => r.type === ft);
+  if (fs) pool = pool.filter(r => r.merchant.toLowerCase().includes(fs));
+
+  const map = {};
+  pool.forEach(r => { map[r.category] = (map[r.category]||0) + r.amount; });
+  const sorted = Object.entries(map).sort((a,b) => b[1]-a[1]).slice(0,10);
+  const labels = sorted.map(e => e[0]);
+  const vals = sorted.map(e => Math.round(e[1]));
+  const colors = labels.map(l => CAT_COLORS[l]||'#6b7280');
+  const total = sum(vals)||1;
+  document.getElementById('cat-legend').innerHTML = sorted.slice(0,5).map(([l,v]) =>
+    `<span><span class="lsq" style="background:${CAT_COLORS[l]||'#6b7280'}"></span>${l} ${Math.round(v/total*100)}%</span>`
+  ).join('');
+  if (catChart) catChart.destroy();
+  catChart = new Chart(document.getElementById('cat-chart'), {
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors,borderWidth:2,borderColor:'#161a24',hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' ฿'+ctx.raw.toLocaleString('th-TH')}}}}
+  });
+}
+
+function renderTypeChart(d) {
+  // Type chart shows the Purchase vs Installment split — ignore the Type
+  // filter itself, otherwise one segment would always be zero.
+  const fc = document.getElementById('f-card').value;
+  const fcat = document.getElementById('f-cat').value;
+  const fs = (document.getElementById('f-search')?.value || '').trim().toLowerCase();
+  let pool = allData.slice();
+  if (selPeriod !== 'all') pool = pool.filter(r => r.pay_period === selPeriod);
+  if (fc)   pool = pool.filter(r => r.card === fc);
+  if (fcat) pool = pool.filter(r => r.category === fcat);
+  if (fs)   pool = pool.filter(r => r.merchant.toLowerCase().includes(fs));
+
+  const tP = sum(pool.filter(r=>r.type==='Purchase' || r.type==='Reversal').map(r=>r.amount));
+  const tI = sum(pool.filter(r=>r.type==='Installment').map(r=>r.amount));
+  const pct = tP+tI > 0 ? Math.round(tP/(tP+tI)*100) : 0;
+  document.getElementById('type-legend').innerHTML =
+    `<span><span class="lsq" style="background:#4f8ef7"></span>Purchase ${pct}%</span>` +
+    `<span><span class="lsq" style="background:#7c5df0"></span>Installment ${100-pct}%</span>`;
+  if (typeChart) typeChart.destroy();
+  typeChart = new Chart(document.getElementById('type-chart'), {
+    type:'doughnut',
+    data:{labels:['Purchase','Installment'],datasets:[{data:[Math.round(tP),Math.round(tI)],backgroundColor:['#4f8ef7','#7c5df0'],borderWidth:2,borderColor:'#161a24',hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' ฿'+ctx.raw.toLocaleString('th-TH')}}}}
+  });
+}
+
+function renderCardBars(d) {
+  // For the card breakdown, we want to always SHOW both cards even if a card
+  // filter is active (otherwise the chart would only show one bar).
+  // So we use a pool that ignores the card filter but respects period/type/category/search.
+  const ft = document.getElementById('f-type').value;
+  const fcat = document.getElementById('f-cat').value;
+  const fs = (document.getElementById('f-search')?.value || '').trim().toLowerCase();
+  let pool = allData.slice();
+  if (selPeriod !== 'all') pool = pool.filter(r => r.pay_period === selPeriod);
+  if (ft)   pool = pool.filter(r => r.type === ft);
+  if (fcat) pool = pool.filter(r => r.category === fcat);
+  if (fs)   pool = pool.filter(r => r.merchant.toLowerCase().includes(fs));
+
+  const cards = [...new Set(allData.map(r=>r.card))];
+  const totals = cards.map(c => sum(pool.filter(r=>r.card===c).map(r=>r.amount)));
+  const gt = sum(totals)||1;
+  const colors = {'7173':'#4f8ef7','4892':'#22d3a0'};
+  const names = {'7173':'Central The 1 (…7173)','4892':'HomePro Visa (…4892)'};
+  document.getElementById('card-bars').innerHTML = cards.map((c,i) => `
+    <div class="bar-row">
+      <div class="bar-info"><span>${names[c]||c}</span><span style="font-weight:600;color:var(--text)">${fmt(totals[i])}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(totals[i]/gt*100)}%;background:${colors[c]||'#888'}"></div></div>
+    </div>
+  `).join('') + `
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;font-family:var(--mono);color:var(--text3)">
+      <span>Combined</span><span style="color:var(--text);font-weight:600">${fmt(sum(totals))}</span>
+    </div>
+  `;
+}
+
+function renderPeriodChart() {
+  // The period chart shows ALL periods on X-axis (that's the whole point),
+  // but it should still respect the OTHER slicers (Card / Type / Category / Search).
+  const fc = document.getElementById('f-card').value;
+  const ft = document.getElementById('f-type').value;
+  const fcat = document.getElementById('f-cat').value;
+  const fs = (document.getElementById('f-search')?.value || '').trim().toLowerCase();
+
+  let pool = allData.slice();
+  if (fc)   pool = pool.filter(r => r.card === fc);
+  if (ft)   pool = pool.filter(r => r.type === ft);
+  if (fcat) pool = pool.filter(r => r.category === fcat);
+  if (fs)   pool = pool.filter(r => r.merchant.toLowerCase().includes(fs));
+
+  // Sort chronologically: OLDEST left → NEWEST right
+  const periods = [...new Set(pool.map(r => r.pay_period))]
+    .sort((a, b) => periodToSortKey(a) - periodToSortKey(b));
+
+  // Purchases include Reversals (negative amounts), so they net out correctly
+  const purchaseByPeriod = periods.map(p =>
+    sum(pool.filter(r => r.pay_period === p && (r.type === 'Purchase' || r.type === 'Reversal')).map(r => r.amount))
+  );
+  const installByPeriod = periods.map(p =>
+    sum(pool.filter(r => r.pay_period === p && r.type === 'Installment').map(r => r.amount))
+  );
+
+  document.getElementById('period-legend').innerHTML =
+    `<span><span class="lsq" style="background:#4f8ef7"></span>Purchase</span>` +
+    `<span><span class="lsq" style="background:#7c5df0"></span>Installment</span>`;
+
+  if (periodChart) periodChart.destroy();
+
+  if (!periods.length) {
+    return;
+  }
+
+  // Custom plugin to draw segment values inside each stack and the total on top
+  const stackLabelsPlugin = {
+    id: 'stackLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx, data, scales: { x, y } } = chart;
+      const datasets = data.datasets;
+      const labelCount = data.labels.length;
+
+      ctx.save();
+      ctx.font = "500 11px 'DM Mono', monospace";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Compress format: 12345 → "12.3k", 1234567 → "1.23M"
+      const compress = v => {
+        if (Math.abs(v) >= 1_000_000) return '฿' + (v/1_000_000).toFixed(2) + 'M';
+        if (Math.abs(v) >= 1_000)    return '฿' + (v/1_000).toFixed(1) + 'k';
+        return '฿' + Math.round(v);
+      };
+
+      for (let i = 0; i < labelCount; i++) {
+        let stackTotal = 0;
+        let topY = null;
+
+        // Draw label inside each segment
+        datasets.forEach((ds, dsIdx) => {
+          const meta = chart.getDatasetMeta(dsIdx);
+          const bar = meta.data[i];
+          if (!bar || ds.data[i] == null) return;
+
+          const value = ds.data[i];
+          stackTotal += value;
+
+          // Segment label — only draw if segment is tall enough (>= 22px)
+          const segTop = bar.y;
+          const segBottom = bar.base;
+          const segHeight = Math.abs(segBottom - segTop);
+          if (segHeight >= 22) {
+            const cx = bar.x;
+            const cy = (segTop + segBottom) / 2;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(compress(value), cx, cy);
+          }
+
+          if (topY === null || bar.y < topY) topY = bar.y;
+        });
+
+        // Total label on top of the column
+        if (topY !== null && stackTotal !== 0) {
+          const cx = chart.getDatasetMeta(0).data[i]?.x;
+          if (cx != null) {
+            ctx.fillStyle = '#e8eaf2';
+            ctx.font = "600 12px 'DM Mono', monospace";
+            ctx.fillText(compress(stackTotal), cx, topY - 10);
+          }
+        }
+      }
+
+      ctx.restore();
+    }
+  };
+
+  periodChart = new Chart(document.getElementById('period-chart'), {
+    type: 'bar',
+    data: {
+      labels: periods,
+      datasets: [
+        {
+          label: 'Purchase',
+          data: purchaseByPeriod.map(v => Math.round(v)),
+          backgroundColor: '#4f8ef7',
+          borderRadius: 4,
+          stack: 'total'
+        },
+        {
+          label: 'Installment',
+          data: installByPeriod.map(v => Math.round(v)),
+          backgroundColor: '#7c5df0',
+          borderRadius: 4,
+          stack: 'total'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 28 } },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: { color: '#8b91ad', font: { family: "'DM Mono', monospace", size: 10 }, maxRotation: 0, autoSkip: false },
+          grid: { display: false }
+        },
+        y: {
+          stacked: true,
+          ticks: {
+            color: '#8b91ad',
+            font: { family: "'DM Mono', monospace", size: 10 },
+            callback: v => '฿' + Number(v).toLocaleString('th-TH')
+          },
+          grid: { color: 'rgba(42,48,72,0.5)' }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e2436',
+          borderColor: '#2a3048',
+          borderWidth: 1,
+          titleColor: '#e8eaf2',
+          bodyColor: '#8b91ad',
+          padding: 10,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ฿${Number(ctx.raw).toLocaleString('th-TH')}`,
+            footer: items => {
+              const total = items.reduce((s, it) => s + it.raw, 0);
+              return 'Total: ฿' + Number(total).toLocaleString('th-TH');
+            }
+          }
+        }
+      }
+    },
+    plugins: [stackLabelsPlugin]
+  });
+}
+
+function renderTable(d) {
+  const cats = [...new Set(allData.map(r=>r.category))].sort();
+  const sel = document.getElementById('f-cat');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All categories</option>' +
+    cats.map(c => `<option value="${c}"${c===cur?' selected':''}>${c}</option>`).join('');
+
+  const wrap = document.getElementById('table-wrap');
+  if (!d.length) {
+    wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div>No transactions match this filter.</div>';
+    return;
+  }
+  const sorted = [...d].sort((a,b) => b.transaction_date.localeCompare(a.transaction_date));
+  wrap.innerHTML = `
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Date</th><th>Card</th><th>Merchant</th><th>Category</th><th>Type</th><th style="text-align:right">Amount</th></tr></thead>
+      <tbody>
+        ${sorted.map(r => {
+          const typeBadgeClass = r.type === 'Purchase' ? 'bg-pu' : r.type === 'Installment' ? 'bg-in' : 'bg-re';
+          const amtColor = r.type === 'Reversal' ? 'var(--coral)' : r.type === 'Installment' ? 'var(--accent2)' : 'var(--text)';
+          return `<tr>
+          <td class="td-date">${r.transaction_date}</td>
+          <td><span class="badge ${r.card==='7173'?'bg-7173':'bg-4892'}">…${r.card}</span></td>
+          <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.merchant}">${r.merchant.replace(/_/g,' ')}</td>
+          <td><span class="cdot" style="background:${CAT_COLORS[r.category]||'#6b7280'}"></span>${r.category}</td>
+          <td><span class="badge ${typeBadgeClass}">${r.type}</span></td>
+          <td class="td-amt" style="color:${amtColor}">฿${r.amount.toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table>
+    </div>
+    <div class="tfoot-info"><span>${d.length} transactions</span><span>Total: ${fmt(sum(d.map(r=>r.amount)))}</span></div>
+  `;
+}
+
+// Init
+if (allData.length) {
+  buildPills();
+  renderAll();
+  updateFilterCount();
+  document.getElementById('sync-label').textContent = allData.length + ' transactions loaded';
+}
+</script>
+</body>
+</html>
